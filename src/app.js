@@ -31,8 +31,12 @@ app.use(express.json());
 
 // ── Routes ─────────────────────────────────────────────
 const authRouter = require('./routes/auth.routes');
+const roomRouter = require('./routes/room.routes'); // ← ADD THIS
+
 
 app.use('/api/auth', authRouter);
+app.use('/api/rooms', roomRouter); // ← ADD THIS
+
 
 // More routers come here as we build each phase:
 // app.use('/api/rooms',    roomRouter);
