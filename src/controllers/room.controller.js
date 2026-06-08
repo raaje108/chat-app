@@ -272,4 +272,186 @@ const joinRoom = async (req, res) => {
         res.status(500).json({ message: 'Internal server error' });
     }
 };
-module.exports = { createRoom , getRooms, joinRoom};
+
+
+
+// ─────────────────────────────────────────────
+// GET ROOM MEMBERS
+// GET /api/rooms/:roomId/members
+// ─────────────────────────────────────────────
+const getRoomMembers = async (req, res) => {
+    try {
+
+        // ── STEP 1 — get and validate roomId ──
+        const roomId = Number(req.params.roomId);
+
+        if (!roomId || isNaN(roomId)) {
+            return res.status(400).json({
+                message: 'Invalid room ID'
+            });
+        }
+
+        // ── STEP 2 — check the room exists ──
+        // Before listing members we confirm the room is real
+        // and not soft deleted
+        const [rooms] = await db.query(
+            `SELECT id, name FROM rooms 
+             WHERE id = ? AND deleted_at IS NULL`,
+            [roomId]
+        );
+
+        if (rooms.length === 0) {
+            return res.status(404).json({
+                message: 'Room not found'
+            });
+        }
+
+        // ── STEP 3 — check the requesting user is a member ──
+        // You shouldn't be able to see members of a room
+        // you haven't joined — especially for private rooms
+        const [membership] = await db.query(
+            `SELECT id FROM room_members 
+             WHERE room_id = ? 
+               AND user_id = ?
+               AND left_at IS NULL`,
+            [roomId, req.user.id]
+        );
+
+        if (membership.length === 0) {
+            return res.status(403).json({
+                message: 'You are not a member of this room'
+            });
+        }
+
+        // ── STEP 4 — fetch all members with their user info ──
+        // This is the 3-table JOIN
+        // rm = room_members (alias to keep query readable)
+        // u  = users        (alias)
+        const [members] = await db.query(
+            `SELECT
+                -- from room_members table
+                rm.id          AS membership_id,
+                rm.role,
+                rm.joined_at,
+                rm.is_muted,
+                rm.last_read_at,
+
+                -- from users table
+                -- we rename with AS to make the response clean
+                u.id           AS user_id,
+                u.full_name,
+                u.username,
+                u.avatar_url,
+                u.is_online,
+                u.last_seen
+
+             FROM room_members rm
+
+             -- JOIN users by matching user_id
+             -- INNER JOIN here — we only want members who still exist
+             -- (unlike LEFT JOIN which would include NULLs)
+             JOIN users u ON rm.user_id = u.id
+
+             WHERE rm.room_id = ?
+               AND rm.left_at IS NULL
+
+             -- admins first, then moderators, then members
+             -- FIELD() lets you define a custom sort order
+             ORDER BY FIELD(rm.role, 'admin', 'moderator', 'member'),
+                      rm.joined_at ASC`,
+            [roomId]
+        );
+
+        // ── STEP 5 — send response ──
+        res.status(200).json({
+            message:  'Members fetched successfully',
+            room:     rooms[0].name,
+            count:    members.length,
+            members
+        });
+
+    } catch (error) {
+        console.error('Get members error:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+};
+
+// ─────────────────────────────────────────────
+// DELETE A ROOM (soft delete)
+// DELETE /api/rooms/:roomId
+// ─────────────────────────────────────────────
+const deleteRoom = async (req, res) => {
+    try {
+
+        // ── STEP 1 — get and validate roomId ──
+        const roomId = Number(req.params.roomId);
+
+        if (!roomId || isNaN(roomId)) {
+            return res.status(400).json({
+                message: 'Invalid room ID'
+            });
+        }
+
+        // ── STEP 2 — check room exists and is not already deleted ──
+        const [rooms] = await db.query(
+            `SELECT id, name, created_by 
+             FROM rooms 
+             WHERE id = ? 
+               AND deleted_at IS NULL`,
+            [roomId]
+        );
+
+        if (rooms.length === 0) {
+            return res.status(404).json({
+                message: 'Room not found'
+            });
+        }
+
+        const room = rooms[0];
+
+        // ── STEP 3 — ownership check ──
+        // This is authorization — not just "are you logged in"
+        // but "are you specifically the person who owns this"
+        // req.user.id comes from the JWT token (verified by middleware)
+        // room.created_by comes from the database
+        // If they don't match — this user doesn't own this room
+        if (room.created_by !== req.user.id) {
+            return res.status(403).json({
+                message: 'Only the room creator can delete this room'
+            });
+        }
+        // Why !== and not != ?
+        // !== checks value AND type (strict equality)
+        // room.created_by is a number from DB
+        // req.user.id is a number from JWT payload
+        // Both are numbers so !== works perfectly
+        // Always use === and !== in JavaScript — never == or !=
+
+        // ── STEP 4 — soft delete the room ──
+        // We set deleted_at to the current timestamp
+        // The row stays in the database — nothing is destroyed
+        await db.query(
+            `UPDATE rooms 
+             SET deleted_at = NOW() 
+             WHERE id = ?`,
+            [roomId]
+        );
+        // NOW() is a MySQL function that returns the current timestamp
+        // This is why deleted_at is TIMESTAMP — it stores exactly when deletion happened
+
+        // ── STEP 5 — send success response ──
+        // 200 is fine here — some APIs use 204 (No Content) for deletes
+        // 204 means success but sends no response body
+        // We use 200 so we can send a helpful message
+        res.status(200).json({
+            message: `Room "${room.name}" has been deleted successfully`,
+            roomId
+        });
+
+    } catch (error) {
+        console.error('Delete room error:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+};
+
+module.exports = { createRoom , getRooms, joinRoom, getRoomMembers, deleteRoom};

@@ -1,6 +1,6 @@
 const express        = require('express');
 const router         = express.Router();
-const { createRoom , getRooms, joinRoom } = require('../controllers/room.controller');
+const { createRoom , getRooms, joinRoom, getRoomMembers, deleteRoom } = require('../controllers/room.controller');
 const { verifyJWT }  = require('../middlewares/auth.middleware');
 
 // Every room route requires login
@@ -10,6 +10,8 @@ const { verifyJWT }  = require('../middlewares/auth.middleware');
 router.post('/', verifyJWT, createRoom);
 router.get('/', verifyJWT, getRooms); // ← ADD THIS
 router.post('/:roomId/join',    verifyJWT, joinRoom);
+router.get('/:roomId/members',      verifyJWT, getRoomMembers); // ← ADD THIS
+router.delete('/:roomId',       verifyJWT, deleteRoom); // ← ADD THIS
 
 // These come in Day 5, 6, 7, 8 — adding now as placeholders
 // router.get('/',                verifyJWT, getRooms);
