@@ -23,23 +23,24 @@ const createRoom = async (req, res) => {
         // direct (DM) rooms don't need one
         const type = room_type || 'public'; // default to public if not provided
 
-        if (type !== 'direct' && !name) {
+        if ((type === 'public' || type === 'group') && (!name || !name.trim())) {
             return res.status(400).json({
-                message: 'Room name is required for group and public rooms'
+                message: 'Room name is required for public and group rooms'
             });
         }
 
         // ── STEP 4 — validate room_type value ──
         // only allow the 3 values we defined in our ENUM
         const allowedTypes = ['direct', 'group', 'public'];
-        if (!allowedTypes.includes(type)) {
-            return res.status(400).json({
-                message: `room_type must be one of: ${allowedTypes.join(', ')}`
-            });
-        }
+        
         // .includes() checks if a value exists in an array
         // ['a','b','c'].includes('b') → true
         // ['a','b','c'].includes('z') → false
+        if (!allowedTypes.includes(type)) {
+            return res.status(400).json({
+                message: 'room_type must be direct, group or public'
+            });
+        }
 
         // ── STEP 5 — insert the room into the database ──
         const [result] = await db.query(

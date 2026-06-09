@@ -110,8 +110,6 @@ const loginUser = async (req, res) => {
 
         // rows is an array — if empty, no user found with that email
         if (rows.length === 0) {
-            // Important: don't say "email not found" — that tells hackers
-            // which emails exist in your system. Always say "invalid credentials"
             return res.status(401).json({
                 message: 'Invalid email or password'
             });
