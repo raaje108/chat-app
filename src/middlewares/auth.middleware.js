@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
 const db  = require('../db/index');
+const AppError = require('../utils/AppError');
 
 const verifyJWT = async (req, res, next) => {
     // ── WHAT IS next? ──────────────────────────────────────────
@@ -20,9 +21,7 @@ const verifyJWT = async (req, res, next) => {
 
         // If no Authorization header was sent at all
         if (!authHeader) {
-            return res.status(401).json({
-                message: 'Access denied. No token provided.'
-            });
+            return next(new AppError('Access denied. No token provided.', 401));
         }
 
         // ── STEP 2 — extract just the token from "Bearer <token>" ──
@@ -30,9 +29,7 @@ const verifyJWT = async (req, res, next) => {
         // We need only the part after "Bearer "
         // .startsWith() checks if a string begins with something
         if (!authHeader.startsWith('Bearer ')) {
-            return res.status(401).json({
-                message: 'Invalid token format. Use: Bearer <token>'
-            });
+            return next(new AppError('Invalid token format. Use: Bearer <token>', 401));
         }
 
         // .split(' ') splits "Bearer eyJhbG..." into ["Bearer", "eyJhbG..."]
@@ -64,9 +61,7 @@ const verifyJWT = async (req, res, next) => {
 
         // If no user found with that id
         if (users.length === 0) {
-            return res.status(401).json({
-                message: 'User no longer exists.'
-            });
+            return next(new AppError('User no longer exists.', 401));
         }
 
         // ── STEP 5 — attach user to the request object ──
@@ -83,19 +78,7 @@ const verifyJWT = async (req, res, next) => {
         next();
 
     } catch (error) {
-        // jwt.verify() throws specific errors we can handle nicely
-        if (error.name === 'TokenExpiredError') {
-            return res.status(401).json({
-                message: 'Token has expired. Please login again.'
-            });
-        }
-        if (error.name === 'JsonWebTokenError') {
-            return res.status(401).json({
-                message: 'Invalid token. Please login again.'
-            });
-        }
-        // Any other unexpected error
-        return res.status(500).json({ message: 'Internal server error' });
+        next(error);
     }
 };
 

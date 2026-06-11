@@ -1,10 +1,11 @@
-const db = require('../db/index');
+const db       = require('../db/index');
+const AppError = require('../utils/AppError');
 
 // ─────────────────────────────────────────────
 // CREATE A ROOM
 // POST /api/rooms
 // ─────────────────────────────────────────────
-const createRoom = async (req, res) => {
+const createRoom = async (req, res, next) => {
     try {
 
         // ── STEP 1 — get data from request body ──
@@ -24,9 +25,7 @@ const createRoom = async (req, res) => {
         const type = room_type || 'public'; // default to public if not provided
 
         if ((type === 'public' || type === 'group') && (!name || !name.trim())) {
-            return res.status(400).json({
-                message: 'Room name is required for public and group rooms'
-            });
+            return next(new AppError('Room name is required for public and group rooms', 400));
         }
 
         // ── STEP 4 — validate room_type value ──
@@ -37,9 +36,7 @@ const createRoom = async (req, res) => {
         // ['a','b','c'].includes('b') → true
         // ['a','b','c'].includes('z') → false
         if (!allowedTypes.includes(type)) {
-            return res.status(400).json({
-                message: 'room_type must be direct, group or public'
-            });
+            return next(new AppError('room_type must be direct, group or public', 400));
         }
 
         // ── STEP 5 — insert the room into the database ──
@@ -87,8 +84,7 @@ const createRoom = async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Create room error:', error);
-        res.status(500).json({ message: 'Internal server error' });
+        next(error);
     }
 };
 
@@ -98,7 +94,7 @@ const createRoom = async (req, res) => {
 // GET ALL PUBLIC ROOMS
 // GET /api/rooms
 // ─────────────────────────────────────────────
-const getRooms = async (req, res) => {
+const getRooms = async (req, res, next) => {
     try {
 
         // ── STEP 1 — handle optional search query ──
@@ -176,8 +172,7 @@ const getRooms = async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Get rooms error:', error);
-        res.status(500).json({ message: 'Internal server error' });
+        next(error);
     }
 };
 
@@ -185,7 +180,7 @@ const getRooms = async (req, res) => {
 // JOIN A ROOM
 // POST /api/rooms/:roomId/join
 // ─────────────────────────────────────────────
-const joinRoom = async (req, res) => {
+const joinRoom = async (req, res, next) => {
     try {
 
         // ── STEP 1 — get roomId from URL params ──
@@ -199,9 +194,7 @@ const joinRoom = async (req, res) => {
         // Number("abc") = NaN (Not a Number)
         // isNaN() checks for that
         if (!roomId || isNaN(roomId)) {
-            return res.status(400).json({
-                message: 'Invalid room ID'
-            });
+            return next(new AppError('Invalid room ID', 400));
         }
 
         // ── STEP 3 — check room exists and is not deleted ──
@@ -217,9 +210,7 @@ const joinRoom = async (req, res) => {
 
         // If no room found — either doesn't exist or was soft deleted
         if (rooms.length === 0) {
-            return res.status(404).json({
-                message: 'Room not found'
-            });
+            return next(new AppError('Room not found', 404));
         }
         // 404 = Not Found — the correct status when a resource doesn't exist
 
@@ -229,9 +220,7 @@ const joinRoom = async (req, res) => {
         // DM rooms are private between two specific users
         // No one should be able to manually join one
         if (room.room_type === 'direct') {
-            return res.status(403).json({
-                message: 'You cannot manually join a direct message room'
-            });
+            return next(new AppError('You cannot manually join a direct message room', 403));
         }
         // 403 = Forbidden — the resource exists but you're not allowed to do this
         // Different from 401 (Unauthorized = not logged in)
@@ -264,13 +253,10 @@ const joinRoom = async (req, res) => {
         // error.code === 'ER_DUP_ENTRY' tells us exactly what happened
         // Instead of crashing with 500, we send a meaningful 409 response
         if (error.code === 'ER_DUP_ENTRY') {
-            return res.status(409).json({
-                message: 'You are already a member of this room'
-            });
+            return next(new AppError('You are already a member of this room', 409));
         }
 
-        console.error('Join room error:', error);
-        res.status(500).json({ message: 'Internal server error' });
+        next(error);
     }
 };
 
@@ -280,16 +266,14 @@ const joinRoom = async (req, res) => {
 // GET ROOM MEMBERS
 // GET /api/rooms/:roomId/members
 // ─────────────────────────────────────────────
-const getRoomMembers = async (req, res) => {
+const getRoomMembers = async (req, res, next) => {
     try {
 
         // ── STEP 1 — get and validate roomId ──
         const roomId = Number(req.params.roomId);
 
         if (!roomId || isNaN(roomId)) {
-            return res.status(400).json({
-                message: 'Invalid room ID'
-            });
+            return next(new AppError('Invalid room ID', 400));
         }
 
         // ── STEP 2 — check the room exists ──
@@ -302,9 +286,7 @@ const getRoomMembers = async (req, res) => {
         );
 
         if (rooms.length === 0) {
-            return res.status(404).json({
-                message: 'Room not found'
-            });
+            return next(new AppError('Room not found', 404));
         }
 
         // ── STEP 3 — check the requesting user is a member ──
@@ -319,9 +301,7 @@ const getRoomMembers = async (req, res) => {
         );
 
         if (membership.length === 0) {
-            return res.status(403).json({
-                message: 'You are not a member of this room'
-            });
+            return next(new AppError('You are not a member of this room', 403));
         }
 
         // ── STEP 4 — fetch all members with their user info ──
@@ -372,8 +352,7 @@ const getRoomMembers = async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Get members error:', error);
-        res.status(500).json({ message: 'Internal server error' });
+        next(error);
     }
 };
 
@@ -381,16 +360,14 @@ const getRoomMembers = async (req, res) => {
 // DELETE A ROOM (soft delete)
 // DELETE /api/rooms/:roomId
 // ─────────────────────────────────────────────
-const deleteRoom = async (req, res) => {
+const deleteRoom = async (req, res, next) => {
     try {
 
         // ── STEP 1 — get and validate roomId ──
         const roomId = Number(req.params.roomId);
 
         if (!roomId || isNaN(roomId)) {
-            return res.status(400).json({
-                message: 'Invalid room ID'
-            });
+            return next(new AppError('Invalid room ID', 400));
         }
 
         // ── STEP 2 — check room exists and is not already deleted ──
@@ -403,9 +380,7 @@ const deleteRoom = async (req, res) => {
         );
 
         if (rooms.length === 0) {
-            return res.status(404).json({
-                message: 'Room not found'
-            });
+            return next(new AppError('Room not found', 404));
         }
 
         const room = rooms[0];
@@ -417,9 +392,7 @@ const deleteRoom = async (req, res) => {
         // room.created_by comes from the database
         // If they don't match — this user doesn't own this room
         if (room.created_by !== req.user.id) {
-            return res.status(403).json({
-                message: 'Only the room creator can delete this room'
-            });
+            return next(new AppError('Only the room creator can delete this room', 403));
         }
         // Why !== and not != ?
         // !== checks value AND type (strict equality)
@@ -450,8 +423,7 @@ const deleteRoom = async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Delete room error:', error);
-        res.status(500).json({ message: 'Internal server error' });
+        next(error);
     }
 };
 

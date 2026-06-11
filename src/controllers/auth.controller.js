@@ -1,26 +1,22 @@
-const db     = require('../db/index');
-const bcrypt = require('bcrypt');
-const jwt     = require('jsonwebtoken'); // add this at the top
+const db       = require('../db/index');
+const bcrypt   = require('bcrypt');
+const jwt      = require('jsonwebtoken');
+const AppError = require('../utils/AppError');
 
-
-const registerUser = async (req, res) => {
+const registerUser = async (req, res, next) => {
     try {
         // STEP 1 — pull data from request body
         const { full_name, username, email, password } = req.body;
 
         // STEP 2 — validate required fields
         if (!full_name || !email || !password) {
-            return res.status(400).json({
-                message: 'full_name, email and password are required'
-            });
+            return next(new AppError('full_name, email and password are required', 400));
         }
 
         // STEP 3 — password strength check
         // At least 6 chars — we'll add proper validation in Phase 5
         if (password.length < 6) {
-            return res.status(400).json({
-                message: 'Password must be at least 6 characters'
-            });
+            return next(new AppError('Password must be at least 6 characters', 400));
         }
 
         // STEP 4 — check email is not already taken
@@ -29,9 +25,7 @@ const registerUser = async (req, res) => {
             [email]
         );
         if (existingEmail.length > 0) {
-            return res.status(409).json({
-                message: 'An account with this email already exists'
-            });
+            return next(new AppError('An account with this email already exists', 409));
         }
 
         // STEP 5 — check username is not already taken (only if provided)
@@ -41,9 +35,7 @@ const registerUser = async (req, res) => {
                 [username]
             );
             if (existingUsername.length > 0) {
-                return res.status(409).json({
-                    message: 'This username is already taken'
-                });
+                return next(new AppError('This username is already taken', 409));
             }
         }
 
@@ -71,25 +63,19 @@ const registerUser = async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Register error:', error);
-        res.status(500).json({ message: 'Internal server error' });
+        next(error);
     }
 };
 
-
-
-const loginUser = async (req, res) => {
+const loginUser = async (req, res, next) => {
     try {
-
         // ── STEP 1 — get email and password from request body ──
         const { email, password } = req.body;
 
         // ── STEP 2 — check both fields exist ──
         // If someone sends an empty request, stop here immediately
         if (!email || !password) {
-            return res.status(400).json({
-                message: 'Email and password are required'
-            });
+            return next(new AppError('Email and password are required', 400));
         }
 
         // ── STEP 3 — find the user by email ──
@@ -110,9 +96,7 @@ const loginUser = async (req, res) => {
 
         // rows is an array — if empty, no user found with that email
         if (rows.length === 0) {
-            return res.status(401).json({
-                message: 'Invalid email or password'
-            });
+            return next(new AppError('Invalid email or password', 401));
         }
 
         // rows[0] is the first (and only) matching user
@@ -125,9 +109,7 @@ const loginUser = async (req, res) => {
         const isPasswordCorrect = await bcrypt.compare(password, user.password_hash);
 
         if (!isPasswordCorrect) {
-            return res.status(401).json({
-                message: 'Invalid email or password' // same message — don't reveal which was wrong
-            });
+            return next(new AppError('Invalid email or password', 401));
         }
 
         // ── STEP 5 — create the JWT token ──
@@ -172,18 +154,21 @@ const loginUser = async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Login error:', error);
-        res.status(500).json({ message: 'Internal server error' });
+        next(error);
     }
 };
 
-const getMe = async (req, res) => {
-    // No DB query needed — req.user was attached by verifyJWT middleware
-    // This is why middleware is powerful — work done once, available everywhere
-    res.status(200).json({
-        message: 'Here is your profile',
-        user: req.user
-    });
+const getMe = async (req, res, next) => {
+    try {
+        // No DB query needed — req.user was attached by verifyJWT middleware
+        // This is why middleware is powerful — work done once, available everywhere
+        res.status(200).json({
+            message: 'Here is your profile',
+            user: req.user
+        });
+    } catch (error) {
+        next(error);
+    }
 };
 
 // Update exports

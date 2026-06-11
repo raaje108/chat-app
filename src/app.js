@@ -1,55 +1,40 @@
-// const express = require('express');
-// const cors    = require('cors');
-
-// const app = express();
-
-// // Middlewares
-// app.use(cors({ origin: true, credentials: true }));
-// app.use(express.json()); // parse incoming JSON bodies
-
-// // Routes (we'll add these as we build each feature)
-// // app.use('/api/auth',  authRouter);
-// // app.use('/api/rooms', roomRouter);
-
-// // Health check — visit localhost:8000/health to confirm server is running
-// app.get('/health', (req, res) => {
-//     res.json({ status: 'OK', message: 'Chat API is running 🚀' });
-// });
-
-// module.exports = app;
-
-
-
-const express    = require('express');
-const cors       = require('cors');
+const express          = require('express');
+const cors             = require('cors');
+const { errorHandler } = require('./middlewares/error.middleware');
+const { apiLimiter }   = require('./middlewares/rateLimiter.middleware'); // ← ADD
 
 const app = express();
 
-// ── Middlewares ────────────────────────────────────────
 app.use(cors({ origin: true, credentials: true }));
 app.use(express.json());
 
-// ── Routes ─────────────────────────────────────────────
-const authRouter = require('./routes/auth.routes');
-const roomRouter = require('./routes/room.routes'); // ← ADD THIS
-const messageRouter = require('./routes/message.routes'); // ← ADD THIS
+// ── Apply general rate limit to ALL routes ──
+// Must be before routes so it runs on every request
+app.use('/api', apiLimiter); // ← ADD — only limits /api/* routes
 
+// ── Routes ──────────────────────────────────
+const authRouter    = require('./routes/auth.routes');
+const roomRouter    = require('./routes/room.routes');
+const messageRouter = require('./routes/message.routes');
 
-app.use('/api/auth', authRouter);
-app.use('/api/rooms', roomRouter); // ← ADD THIS
-app.use('/api/rooms', messageRouter); // ← ADD THIS (same prefix as roomRouter)
+app.use('/api/auth',  authRouter);
+app.use('/api/rooms', roomRouter);
+app.use('/api/rooms', messageRouter);
 
-
-// More routers come here as we build each phase:
-// app.use('/api/rooms',    roomRouter);
-// app.use('/api/messages', messageRouter);
-
-// ── Health Check ───────────────────────────────────────
+// ── Health Check ────────────────────────────
 app.get('/health', (req, res) => {
-    res.json({
-        status:  'OK',
-        message: 'Chat API is running 🚀'
+    res.json({ status: 'OK', message: 'Chat API is running 🚀' });
+});
+
+// ── 404 Handler ─────────────────────────────
+app.use('*', (req, res) => {
+    res.status(404).json({
+        status:  'fail',
+        message: `Route ${req.method} ${req.originalUrl} not found`
     });
 });
+
+// ── Global Error Handler ─────────────────────
+app.use(errorHandler);
 
 module.exports = app;

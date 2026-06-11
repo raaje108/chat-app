@@ -1,19 +1,18 @@
 const db = require('../db/index');
+const AppError = require('../utils/AppError');
 
 // ─────────────────────────────────────────────
 // GET MESSAGE HISTORY
 // GET /api/rooms/:roomId/messages
 // ─────────────────────────────────────────────
-const getMessages = async (req, res) => {
+const getMessages = async (req, res, next) => {
     try {
 
         // ── STEP 1 — get roomId from URL params ──
         const roomId = Number(req.params.roomId);
 
         if (!roomId || isNaN(roomId)) {
-            return res.status(400).json({
-                message: 'Invalid room ID'
-            });
+            return next(new AppError('Invalid room ID', 400));
         }
 
         // ── STEP 2 — get pagination params from query string ──
@@ -38,9 +37,7 @@ const getMessages = async (req, res) => {
         );
 
         if (rooms.length === 0) {
-            return res.status(404).json({
-                message: 'Room not found'
-            });
+            return next(new AppError('Room not found', 404));
         }
 
         // ── STEP 4 — check user is a member ──
@@ -53,9 +50,7 @@ const getMessages = async (req, res) => {
         );
 
         if (membership.length === 0) {
-            return res.status(403).json({
-                message: 'You are not a member of this room'
-            });
+            return next(new AppError('You are not a member of this room', 403));
         }
 
         // ── STEP 5 — build the query ──
@@ -164,8 +159,7 @@ const getMessages = async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Get messages error:', error);
-        res.status(500).json({ message: 'Internal server error' });
+        next(error);
     }
 };
 
