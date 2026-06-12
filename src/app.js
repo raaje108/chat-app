@@ -21,6 +21,9 @@ app.use('/api/auth',  authRouter);
 app.use('/api/rooms', roomRouter);
 app.use('/api/rooms', messageRouter);
 
+app.use('/api/rooms', roomRouter);
+app.use('/api/rooms', messageRouter);   // GET /api/rooms/:roomId/messages
+app.use('/api',       messageRouter);   // POST/DELETE /api/messages/:messageId/react
 // ── Health Check ────────────────────────────
 app.get('/health', (req, res) => {
     res.json({ status: 'OK', message: 'Chat API is running 🚀' });
