@@ -4,6 +4,8 @@ const { errorHandler } = require('./middlewares/error.middleware');
 const { apiLimiter }   = require('./middlewares/rateLimiter.middleware'); // ← ADD
 
 const app = express();
+const path = require('path'); // built into Node — no install needed
+
 
 app.use(cors({ origin: true, credentials: true }));
 app.use(express.json());
@@ -20,6 +22,8 @@ const messageRouter = require('./routes/message.routes');
 app.use('/api/auth',  authRouter);
 app.use('/api/rooms', roomRouter);
 app.use('/api/rooms', messageRouter);
+app.use(express.static(path.join(__dirname, '../public')));
+
 
 app.use('/api/rooms', roomRouter);
 app.use('/api/rooms', messageRouter);   // GET /api/rooms/:roomId/messages
