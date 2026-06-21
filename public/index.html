@@ -1,824 +1,222 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Nexus — Sign in</title>
-<link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet"/>
-<style>
-/* ── tokens ── */
-:root {
-  --bg:          #080808;
-  --surface:     #101010;
-  --card:        #141414;
-  --border:      #1f1f1f;
-  --border-hi:   #2a2a2a;
-  --green:       #22c55e;
-  --green-dim:   #16a34a;
-  --green-glow:  rgba(34,197,94,.12);
-  --green-glow2: rgba(34,197,94,.06);
-  --text:        #f0f0f0;
-  --text-2:      #737373;
-  --text-3:      #404040;
-  --red:         #ef4444;
-  --red-dim:     rgba(239,68,68,.1);
-  --radius:      10px;
-  --radius-sm:   6px;
-}
-
-/* ── reset ── */
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html { height: 100%; }
-body {
-  height: 100%;
-  background: var(--bg);
-  color: var(--text);
-  font-family: 'Inter', system-ui, sans-serif;
-  font-size: 14px;
-  line-height: 1.5;
-  -webkit-font-smoothing: antialiased;
-}
-
-/* ── layout ── */
-.page {
-  min-height: 100vh;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-}
-
-/* ── left panel ── */
-.left {
-  background: var(--surface);
-  border-right: 1px solid var(--border);
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  padding: 48px;
-  position: relative;
-  overflow: hidden;
-}
-.left::before {
-  content: '';
-  position: absolute;
-  bottom: -120px;
-  left: -80px;
-  width: 400px;
-  height: 400px;
-  background: radial-gradient(circle, rgba(34,197,94,.07) 0%, transparent 70%);
-  pointer-events: none;
-}
-.logo {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-weight: 600;
-  font-size: 16px;
-  letter-spacing: -.3px;
-  color: var(--text);
-}
-.logo-mark {
-  width: 28px;
-  height: 28px;
-  background: var(--green);
-  border-radius: 7px;
-  display: grid;
-  place-items: center;
-}
-.logo-mark svg { width: 14px; height: 14px; }
-
-.left-body { flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 48px 0; }
-.left-tag {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  background: var(--green-glow2);
-  border: 1px solid rgba(34,197,94,.15);
-  border-radius: 20px;
-  padding: 4px 12px;
-  font-size: 12px;
-  color: var(--green);
-  font-weight: 500;
-  margin-bottom: 28px;
-  width: fit-content;
-}
-.left-tag::before { content: ''; width: 6px; height: 6px; background: var(--green); border-radius: 50%; }
-.left-title {
-  font-size: 36px;
-  font-weight: 600;
-  line-height: 1.15;
-  letter-spacing: -.8px;
-  color: var(--text);
-  margin-bottom: 16px;
-}
-.left-title em {
-  font-style: normal;
-  color: var(--green);
-}
-.left-sub {
-  font-size: 15px;
-  color: var(--text-2);
-  line-height: 1.7;
-  max-width: 340px;
-  margin-bottom: 48px;
-}
-
-/* stats row */
-.stats {
-  display: flex;
-  gap: 32px;
-}
-.stat-val {
-  font-size: 22px;
-  font-weight: 600;
-  color: var(--text);
-  letter-spacing: -.5px;
-}
-.stat-label {
-  font-size: 12px;
-  color: var(--text-2);
-  margin-top: 2px;
-}
-
-/* feature list */
-.features { display: flex; flex-direction: column; gap: 14px; }
-.feature {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  padding: 14px 16px;
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-}
-.feature-icon {
-  width: 30px;
-  height: 30px;
-  background: var(--green-glow);
-  border-radius: var(--radius-sm);
-  display: grid;
-  place-items: center;
-  flex-shrink: 0;
-  color: var(--green);
-  font-size: 14px;
-}
-.feature-title {
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--text);
-  margin-bottom: 2px;
-}
-.feature-desc { font-size: 12px; color: var(--text-2); }
-
-.left-footer { font-size: 12px; color: var(--text-3); }
-
-/* ── right panel ── */
-.right {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 48px 32px;
-}
-.card {
-  width: 100%;
-  max-width: 380px;
-}
-
-/* tabs */
-.tabs {
-  display: flex;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 4px;
-  margin-bottom: 28px;
-}
-.tab {
-  flex: 1;
-  padding: 8px;
-  text-align: center;
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--text-2);
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  transition: all .15s;
-  border: none;
-  background: transparent;
-}
-.tab.active {
-  background: var(--card);
-  color: var(--text);
-  border: 1px solid var(--border-hi);
-}
-
-/* forms */
-.form { display: none; flex-direction: column; gap: 16px; }
-.form.active { display: flex; }
-
-.form-title {
-  font-size: 20px;
-  font-weight: 600;
-  letter-spacing: -.4px;
-  margin-bottom: 4px;
-}
-.form-sub { font-size: 13px; color: var(--text-2); margin-bottom: 8px; }
-
-.field { display: flex; flex-direction: column; gap: 6px; }
-.field label {
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--text-2);
-  letter-spacing: .2px;
-}
-.field input {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  padding: 10px 12px;
-  font-size: 14px;
-  color: var(--text);
-  font-family: inherit;
-  outline: none;
-  transition: border-color .15s, box-shadow .15s;
-  width: 100%;
-}
-.field input::placeholder { color: var(--text-3); }
-.field input:focus {
-  border-color: var(--green);
-  box-shadow: 0 0 0 3px var(--green-glow);
-}
-.field input.error { border-color: var(--red); }
-.field input.error:focus { box-shadow: 0 0 0 3px var(--red-dim); }
-
-.field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-
-/* password wrapper */
-.pw-wrap { position: relative; }
-.pw-wrap input { padding-right: 40px; }
-.pw-toggle {
-  position: absolute;
-  right: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  background: none;
-  border: none;
-  color: var(--text-3);
-  cursor: pointer;
-  padding: 0;
-  display: grid;
-  place-items: center;
-  transition: color .15s;
-}
-.pw-toggle:hover { color: var(--text-2); }
-
-/* error message */
-.field-error {
-  font-size: 11px;
-  color: var(--red);
-  display: none;
-}
-.field-error.show { display: block; }
-
-/* global error banner */
-.error-banner {
-  background: var(--red-dim);
-  border: 1px solid rgba(239,68,68,.2);
-  border-radius: var(--radius-sm);
-  padding: 10px 12px;
-  font-size: 13px;
-  color: var(--red);
-  display: none;
-}
-.error-banner.show { display: block; }
-
-/* submit button */
-.btn {
-  padding: 11px;
-  background: var(--green);
-  color: #000;
-  font-size: 14px;
-  font-weight: 600;
-  font-family: inherit;
-  border: none;
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  transition: background .15s, transform .1s;
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  margin-top: 4px;
-}
-.btn:hover { background: var(--green-dim); }
-.btn:active { transform: scale(.99); }
-.btn:disabled {
-  opacity: .5;
-  cursor: not-allowed;
-  transform: none;
-}
-.btn-spinner {
-  width: 14px;
-  height: 14px;
-  border: 2px solid rgba(0,0,0,.2);
-  border-top-color: #000;
-  border-radius: 50%;
-  animation: spin .6s linear infinite;
-  display: none;
-}
-.btn.loading .btn-spinner { display: block; }
-.btn.loading .btn-text { opacity: .7; }
-
-/* divider */
-.divider {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  color: var(--text-3);
-  font-size: 12px;
-}
-.divider::before,
-.divider::after {
-  content: '';
-  flex: 1;
-  height: 1px;
-  background: var(--border);
-}
-
-/* switch text */
-.switch-text {
-  text-align: center;
-  font-size: 13px;
-  color: var(--text-2);
-}
-.switch-text button {
-  background: none;
-  border: none;
-  color: var(--green);
-  font-size: 13px;
-  font-weight: 500;
-  cursor: pointer;
-  font-family: inherit;
-  padding: 0;
-}
-.switch-text button:hover { text-decoration: underline; }
-
-/* password strength */
-.pw-strength { display: flex; gap: 4px; margin-top: 6px; }
-.pw-bar {
-  flex: 1;
-  height: 3px;
-  border-radius: 2px;
-  background: var(--border);
-  transition: background .3s;
-}
-.pw-bar.weak   { background: var(--red); }
-.pw-bar.medium { background: #f59e0b; }
-.pw-bar.strong { background: var(--green); }
-
-/* ── success screen ── */
-.success-screen {
-  display: none;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  gap: 12px;
-  padding: 32px 0;
-}
-.success-screen.show { display: flex; }
-.success-icon {
-  width: 52px;
-  height: 52px;
-  background: var(--green-glow);
-  border: 1px solid rgba(34,197,94,.2);
-  border-radius: 50%;
-  display: grid;
-  place-items: center;
-  color: var(--green);
-  font-size: 22px;
-  margin-bottom: 4px;
-}
-.success-title { font-size: 17px; font-weight: 600; }
-.success-sub { font-size: 13px; color: var(--text-2); }
-
-/* ── responsive ── */
-@media (max-width: 768px) {
-  .page { grid-template-columns: 1fr; }
-  .left { display: none; }
-  .right { padding: 32px 20px; }
-}
-
-/* ── animations ── */
-@keyframes spin { to { transform: rotate(360deg); } }
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(6px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-.form.active { animation: fadeIn .2s ease; }
-</style>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Nexus — Sign in</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="css/style.css"/>
 </head>
 <body>
 
-<div class="page">
+<div class="auth-page">
 
   <!-- ── LEFT PANEL ── -->
-  <div class="left">
+  <aside class="auth-left">
+
     <div class="logo">
-      <div class="logo-mark">
-        <svg viewBox="0 0 14 14" fill="none">
-          <path d="M2 7h4M8 7h4M7 2v4M7 8v4" stroke="#000" stroke-width="1.5" stroke-linecap="round"/>
+      <div class="logo-icon">
+        <!-- nexus icon: crosshair / connection symbol -->
+        <svg viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M2 7h4M8 7h4M7 2v4M7 8v4" stroke="#000" stroke-width="1.6" stroke-linecap="round"/>
         </svg>
       </div>
       Nexus
     </div>
 
-    <div class="left-body">
-      <div class="left-tag">Now in beta</div>
-      <h1 class="left-title">Chat that feels<br/><em>actually fast</em></h1>
-      <p class="left-sub">Real-time rooms, instant messages, zero lag. Built for people who find other chat apps too slow or too loud.</p>
+    <div class="auth-hero">
+      <div class="auth-badge">
+        <span class="auth-badge-dot"></span>
+        Live — real-time messaging
+      </div>
 
-      <div class="features">
-        <div class="feature">
+      <h1 class="auth-title">
+        The chat that<br/>feels <em>instant</em>
+      </h1>
+
+      <p class="auth-sub">
+        Rooms, reactions, typing indicators — all real-time via WebSocket.
+        No refresh. No lag. Just conversation.
+      </p>
+
+      <div class="feature-list">
+        <div class="feature-item">
           <div class="feature-icon">⚡</div>
           <div>
             <div class="feature-title">Real-time delivery</div>
-            <div class="feature-desc">Messages appear instantly via WebSocket — no polling, no refresh.</div>
+            <div class="feature-desc">Messages arrive via WebSocket — not polling, not refresh.</div>
           </div>
         </div>
-        <div class="feature">
+        <div class="feature-item">
           <div class="feature-icon">🔐</div>
           <div>
-            <div class="feature-title">JWT secured</div>
-            <div class="feature-desc">Every request is authenticated. Your data stays yours.</div>
+            <div class="feature-title">JWT auth on every request</div>
+            <div class="feature-desc">Token verified server-side. No session storage needed.</div>
           </div>
         </div>
-        <div class="feature">
+        <div class="feature-item">
           <div class="feature-icon">💬</div>
           <div>
             <div class="feature-title">Rooms + reactions</div>
-            <div class="feature-desc">Public channels, group chats, emoji reactions — all of it.</div>
+            <div class="feature-desc">Create rooms, join them, react to messages with emoji.</div>
           </div>
         </div>
       </div>
     </div>
 
-    <div class="left-footer">© 2026 Nexus. Built with Node.js + Socket.io.</div>
-  </div>
+    <div class="auth-footer">Built with Node.js · Express · Socket.io · MySQL</div>
+
+  </aside>
 
   <!-- ── RIGHT PANEL ── -->
-  <div class="right">
-    <div class="card">
+  <main class="auth-right">
+    <div class="auth-card">
 
       <!-- tabs -->
-      <div class="tabs">
-        <button class="tab active" id="tab-login" onclick="switchTab('login')">Sign in</button>
-        <button class="tab" id="tab-register" onclick="switchTab('register')">Create account</button>
+      <div class="tabs" role="tablist">
+        <button class="tab-btn active" id="tab-login"
+                role="tab" aria-selected="true"
+                onclick="switchTab('login')">Sign in</button>
+        <button class="tab-btn" id="tab-register"
+                role="tab" aria-selected="false"
+                onclick="switchTab('register')">Create account</button>
       </div>
 
       <!-- ── LOGIN FORM ── -->
-      <div class="form active" id="form-login">
-        <div>
+      <div class="form-panel active" id="panel-login"
+           role="tabpanel" aria-labelledby="tab-login">
+
+        <div class="form-heading">
           <div class="form-title">Welcome back</div>
-          <div class="form-sub">Sign in to your account to continue.</div>
+          <div class="form-sub">Sign in to continue to Nexus.</div>
         </div>
 
-        <div class="error-banner" id="login-error"></div>
+        <div class="error-banner" id="login-banner" role="alert"></div>
 
         <div class="field">
           <label for="login-email">Email</label>
-          <input type="email" id="login-email" placeholder="you@example.com" autocomplete="email"/>
-          <span class="field-error" id="login-email-err"></span>
+          <input class="input" type="email" id="login-email"
+                 placeholder="you@example.com" autocomplete="email"/>
+          <span class="field-msg" id="login-email-msg" role="alert"></span>
         </div>
 
         <div class="field">
           <label for="login-password">Password</label>
-          <div class="pw-wrap">
-            <input type="password" id="login-password" placeholder="Your password" autocomplete="current-password"/>
-            <button class="pw-toggle" onclick="togglePw('login-password', this)" type="button">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+          <div class="input-wrap">
+            <input class="input" type="password" id="login-password"
+                   placeholder="Your password" autocomplete="current-password"/>
+            <button class="pw-toggle" type="button"
+                    onclick="togglePw('login-password', this)"
+                    aria-label="Toggle password visibility">
+              <!-- eye icon -->
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
+                   stroke="currentColor" stroke-width="2">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                <circle cx="12" cy="12" r="3"/>
               </svg>
             </button>
           </div>
-          <span class="field-error" id="login-pw-err"></span>
+          <span class="field-msg" id="login-pw-msg" role="alert"></span>
         </div>
 
-        <button class="btn" id="login-btn" onclick="handleLogin()">
-          <div class="btn-spinner"></div>
-          <span class="btn-text">Sign in</span>
+        <button class="btn btn-primary" id="login-btn" onclick="handleLogin()">
+          <div class="btn-spinner" aria-hidden="true"></div>
+          <span class="btn-label">Sign in</span>
         </button>
 
         <div class="switch-text">
-          No account? <button onclick="switchTab('register')">Create one</button>
+          No account?
+          <button type="button" onclick="switchTab('register')">Create one</button>
         </div>
+
       </div>
 
       <!-- ── REGISTER FORM ── -->
-      <div class="form" id="form-register">
-        <div>
+      <div class="form-panel" id="panel-register"
+           role="tabpanel" aria-labelledby="tab-register">
+
+        <div class="form-heading">
           <div class="form-title">Create account</div>
-          <div class="form-sub">Join Nexus. It takes 30 seconds.</div>
+          <div class="form-sub">Join Nexus in under a minute.</div>
         </div>
 
-        <div class="error-banner" id="register-error"></div>
+        <div class="error-banner" id="register-banner" role="alert"></div>
 
         <div class="field-row">
           <div class="field">
             <label for="reg-name">Full name</label>
-            <input type="text" id="reg-name" placeholder="Rahul Sharma" autocomplete="name"/>
-            <span class="field-error" id="reg-name-err"></span>
+            <input class="input" type="text" id="reg-name"
+                   placeholder="Rahul Sharma" autocomplete="name"/>
+            <span class="field-msg" id="reg-name-msg" role="alert"></span>
           </div>
           <div class="field">
-            <label for="reg-username">Username <span style="color:var(--text-3)">(optional)</span></label>
-            <input type="text" id="reg-username" placeholder="rahul_s"/>
+            <label for="reg-username">
+              Username <span class="optional">(optional)</span>
+            </label>
+            <input class="input" type="text" id="reg-username"
+                   placeholder="rahul_s"/>
           </div>
         </div>
 
         <div class="field">
           <label for="reg-email">Email</label>
-          <input type="email" id="reg-email" placeholder="you@example.com" autocomplete="email"/>
-          <span class="field-error" id="reg-email-err"></span>
+          <input class="input" type="email" id="reg-email"
+                 placeholder="you@example.com" autocomplete="email"/>
+          <span class="field-msg" id="reg-email-msg" role="alert"></span>
         </div>
 
         <div class="field">
           <label for="reg-password">Password</label>
-          <div class="pw-wrap">
-            <input type="password" id="reg-password" placeholder="Min. 6 characters" autocomplete="new-password"
+          <div class="input-wrap">
+            <input class="input" type="password" id="reg-password"
+                   placeholder="Min. 6 characters" autocomplete="new-password"
                    oninput="checkStrength(this.value)"/>
-            <button class="pw-toggle" onclick="togglePw('reg-password', this)" type="button">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+            <button class="pw-toggle" type="button"
+                    onclick="togglePw('reg-password', this)"
+                    aria-label="Toggle password visibility">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
+                   stroke="currentColor" stroke-width="2">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                <circle cx="12" cy="12" r="3"/>
               </svg>
             </button>
           </div>
-          <!-- password strength bars -->
-          <div class="pw-strength">
-            <div class="pw-bar" id="bar1"></div>
-            <div class="pw-bar" id="bar2"></div>
-            <div class="pw-bar" id="bar3"></div>
+          <div class="pw-strength" aria-hidden="true">
+            <div class="strength-bar" id="bar-1"></div>
+            <div class="strength-bar" id="bar-2"></div>
+            <div class="strength-bar" id="bar-3"></div>
           </div>
-          <span class="field-error" id="reg-pw-err"></span>
+          <span class="field-msg" id="reg-pw-msg" role="alert"></span>
         </div>
 
-        <button class="btn" id="register-btn" onclick="handleRegister()">
-          <div class="btn-spinner"></div>
-          <span class="btn-text">Create account</span>
+        <button class="btn btn-primary" id="register-btn" onclick="handleRegister()">
+          <div class="btn-spinner" aria-hidden="true"></div>
+          <span class="btn-label">Create account</span>
         </button>
 
         <div class="switch-text">
-          Already have an account? <button onclick="switchTab('login')">Sign in</button>
+          Already have an account?
+          <button type="button" onclick="switchTab('login')">Sign in</button>
         </div>
+
       </div>
 
       <!-- ── SUCCESS SCREEN ── -->
-      <div class="success-screen" id="success-screen">
-        <div class="success-icon">✓</div>
+      <div class="success-screen" id="success-screen" aria-live="polite">
+        <div class="success-icon" aria-hidden="true">✓</div>
         <div class="success-title">You're in</div>
         <div class="success-sub">Taking you to your chats…</div>
       </div>
 
     </div>
-  </div>
+  </main>
+
 </div>
 
-<script>
-// ── CONFIG ──
-const API = 'http://localhost:8000/api';
-
-// ── TAB SWITCHING ──
-function switchTab(tab) {
-  const isLogin = tab === 'login';
-
-  document.getElementById('tab-login').classList.toggle('active', isLogin);
-  document.getElementById('tab-register').classList.toggle('active', !isLogin);
-  document.getElementById('form-login').classList.toggle('active', isLogin);
-  document.getElementById('form-register').classList.toggle('active', !isLogin);
-
-  // clear all errors when switching
-  clearErrors();
-}
-
-// ── PASSWORD VISIBILITY ──
-function togglePw(inputId, btn) {
-  const input = document.getElementById(inputId);
-  const show  = input.type === 'password';
-  input.type  = show ? 'text' : 'password';
-
-  // swap icon
-  btn.innerHTML = show
-    ? `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-         <path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94"/>
-         <path d="M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19"/>
-         <line x1="1" y1="1" x2="23" y2="23"/>
-       </svg>`
-    : `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-         <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
-       </svg>`;
-}
-
-// ── PASSWORD STRENGTH ──
-function checkStrength(val) {
-  const bars  = [document.getElementById('bar1'), document.getElementById('bar2'), document.getElementById('bar3')];
-  const hasUpper  = /[A-Z]/.test(val);
-  const hasLower  = /[a-z]/.test(val);
-  const hasNum    = /\d/.test(val);
-  const longEnough = val.length >= 6;
-
-  const score = [longEnough, hasUpper && hasLower, hasNum].filter(Boolean).length;
-
-  bars.forEach(b => b.className = 'pw-bar');
-
-  if (val.length === 0) return;
-
-  const cls = score === 1 ? 'weak' : score === 2 ? 'medium' : 'strong';
-  for (let i = 0; i < score; i++) bars[i].classList.add(cls);
-}
-
-// ── VALIDATION ──
-function clearErrors() {
-  document.querySelectorAll('.field-error').forEach(el => el.classList.remove('show'));
-  document.querySelectorAll('.error-banner').forEach(el => el.classList.remove('show'));
-  document.querySelectorAll('input').forEach(el => el.classList.remove('error'));
-}
-
-function showFieldError(fieldId, errId, msg) {
-  const field = document.getElementById(fieldId);
-  const err   = document.getElementById(errId);
-  if (field) field.classList.add('error');
-  if (err)   { err.textContent = msg; err.classList.add('show'); }
-}
-
-function showBanner(id, msg) {
-  const el = document.getElementById(id);
-  el.textContent = msg;
-  el.classList.add('show');
-}
-
-function setLoading(btnId, loading) {
-  const btn = document.getElementById(btnId);
-  btn.classList.toggle('loading', loading);
-  btn.disabled = loading;
-}
-
-// ── LOGIN ──
-async function handleLogin() {
-  clearErrors();
-
-  const email    = document.getElementById('login-email').value.trim();
-  const password = document.getElementById('login-password').value;
-
-  // client-side checks
-  let valid = true;
-  if (!email) {
-    showFieldError('login-email', 'login-email-err', 'Email is required');
-    valid = false;
-  } else if (!/\S+@\S+\.\S+/.test(email)) {
-    showFieldError('login-email', 'login-email-err', 'Enter a valid email');
-    valid = false;
-  }
-  if (!password) {
-    showFieldError('login-password', 'login-pw-err', 'Password is required');
-    valid = false;
-  }
-  if (!valid) return;
-
-  setLoading('login-btn', true);
-
-  try {
-    const res  = await fetch(`${API}/auth/login`, {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ email, password })
-    });
-
-    const data = await res.json();
-
-    if (!res.ok) {
-      // handle rate limit
-      if (res.status === 429) {
-        showBanner('login-error', 'Too many attempts. Please wait 15 minutes.');
-      } else {
-        showBanner('login-error', data.message || 'Sign in failed');
-      }
-      setLoading('login-btn', false);
-      return;
-    }
-
-    // success — save token and user
-    localStorage.setItem('token', data.token);
-    localStorage.setItem('user',  JSON.stringify(data.user));
-
-    // show success screen
-    document.getElementById('form-login').classList.remove('active');
-    document.getElementById('success-screen').classList.add('show');
-
-    // redirect after short delay
-    setTimeout(() => {
-      window.location.href = '/chat.html';
-    }, 1000);
-
-  } catch (err) {
-    showBanner('login-error', 'Cannot reach server. Is it running?');
-    setLoading('login-btn', false);
-  }
-}
-
-// ── REGISTER ──
-async function handleRegister() {
-  clearErrors();
-
-  const full_name = document.getElementById('reg-name').value.trim();
-  const username  = document.getElementById('reg-username').value.trim();
-  const email     = document.getElementById('reg-email').value.trim();
-  const password  = document.getElementById('reg-password').value;
-
-  // client-side checks
-  let valid = true;
-  if (!full_name || full_name.length < 2) {
-    showFieldError('reg-name', 'reg-name-err', 'Name must be at least 2 characters');
-    valid = false;
-  }
-  if (!email || !/\S+@\S+\.\S+/.test(email)) {
-    showFieldError('reg-email', 'reg-email-err', 'Enter a valid email');
-    valid = false;
-  }
-  if (!password || password.length < 6) {
-    showFieldError('reg-password', 'reg-pw-err', 'Password must be at least 6 characters');
-    valid = false;
-  }
-  if (!valid) return;
-
-  setLoading('register-btn', true);
-
-  try {
-    const body = { full_name, email, password };
-    if (username) body.username = username;
-
-    const res  = await fetch(`${API}/auth/register`, {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify(body)
-    });
-
-    const data = await res.json();
-
-    if (!res.ok) {
-      // server-side validation errors
-      if (data.errors && data.errors.length > 0) {
-        data.errors.forEach(err => {
-          if (err.field === 'full_name') showFieldError('reg-name', 'reg-name-err', err.message);
-          if (err.field === 'email')     showFieldError('reg-email', 'reg-email-err', err.message);
-          if (err.field === 'password')  showFieldError('reg-password', 'reg-pw-err', err.message);
-        });
-      } else {
-        showBanner('register-error', data.message || 'Registration failed');
-      }
-      setLoading('register-btn', false);
-      return;
-    }
-
-    // registered — now auto login
-    const loginRes  = await fetch(`${API}/auth/login`, {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ email, password })
-    });
-
-    const loginData = await loginRes.json();
-
-    if (loginRes.ok) {
-      localStorage.setItem('token', loginData.token);
-      localStorage.setItem('user',  JSON.stringify(loginData.user));
-    }
-
-    // show success
-    document.getElementById('form-register').classList.remove('active');
-    document.getElementById('success-screen').classList.add('show');
-
-    setTimeout(() => {
-      window.location.href = '/chat.html';
-    }, 1000);
-
-  } catch (err) {
-    showBanner('register-error', 'Cannot reach server. Is it running?');
-    setLoading('register-btn', false);
-  }
-}
-
-// ── ENTER KEY ──
-document.addEventListener('keydown', (e) => {
-  if (e.key !== 'Enter') return;
-  const loginActive = document.getElementById('form-login').classList.contains('active');
-  if (loginActive) handleLogin();
-  else handleRegister();
-});
-
-// ── REDIRECT IF ALREADY LOGGED IN ──
-if (localStorage.getItem('token')) {
-  window.location.href = '/chat.html';
-}
-</script>
-
+<!-- JS files — loaded at end so DOM is ready -->
+<script src="js/config.js"></script>
+<script src="js/api.js"></script>
+<script src="js/auth.js"></script>
 </body>
 </html>
