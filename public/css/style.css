@@ -1388,5 +1388,5 @@ a {
     transition: left 0.25s ease;
   }
   .sidebar.open { left: 0; }
+  #mobile-menu-btn { display: block !important; }
 }
-</style>

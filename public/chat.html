@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Nexus — Chat</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="css/style.css"/>
+</head>
+<body>
+
+<div class="chat-page">
+
+  <!-- ════════════════════════════════════ -->
+  <!-- SIDEBAR -->
+  <!-- ════════════════════════════════════ -->
+  <aside class="sidebar" id="sidebar">
+
+    <div class="sidebar-header">
+      <div class="sidebar-logo">
+        <div class="logo-icon">
+          <svg viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M2 7h4M8 7h4M7 2v4M7 8v4" stroke="#000" stroke-width="1.6" stroke-linecap="round"/>
+          </svg>
+        </div>
+        Nexus
+      </div>
+      <button class="icon-btn" id="new-room-btn" title="Create room" aria-label="Create room">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+        </svg>
+      </button>
+    </div>
+
+    <!-- current user -->
+    <div class="user-strip">
+      <div class="avatar large" id="my-avatar">--
+        <span class="online-dot"></span>
+      </div>
+      <div class="user-info">
+        <div class="user-name" id="my-name">Loading…</div>
+        <div class="user-status">Online</div>
+      </div>
+      <button class="icon-btn" id="logout-icon-btn" title="Logout" aria-label="Logout">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/>
+          <polyline points="16 17 21 12 16 7"/>
+          <line x1="21" y1="12" x2="9" y2="12"/>
+        </svg>
+      </button>
+    </div>
+
+    <!-- search -->
+    <div class="sidebar-search">
+      <div class="search-wrap">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+        <input class="search-input" type="text" id="room-search" placeholder="Search rooms…"/>
+      </div>
+    </div>
+
+    <!-- room list -->
+    <div class="section-label">
+      <span>Rooms</span>
+      <button id="refresh-rooms-btn" title="Refresh" aria-label="Refresh rooms">↻</button>
+    </div>
+
+    <div class="rooms-list" id="rooms-list">
+      <!-- skeleton loaders shown while loading, replaced by rooms.js -->
+      <div class="skeleton" style="height:38px;margin:4px 8px;border-radius:6px;"></div>
+      <div class="skeleton" style="height:38px;margin:4px 8px;border-radius:6px;"></div>
+      <div class="skeleton" style="height:38px;margin:4px 8px;border-radius:6px;"></div>
+    </div>
+
+    <div class="sidebar-footer">
+      <button class="logout-btn" id="logout-btn">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/>
+          <polyline points="16 17 21 12 16 7"/>
+          <line x1="21" y1="12" x2="9" y2="12"/>
+        </svg>
+        Logout
+      </button>
+    </div>
+
+  </aside>
+
+  <!-- ════════════════════════════════════ -->
+  <!-- MAIN CHAT AREA -->
+  <!-- ════════════════════════════════════ -->
+  <main class="chat-main">
+
+    <!-- shown when no room is open -->
+    <div class="no-room" id="no-room-state">
+      <div class="no-room-icon">💬</div>
+      <div class="no-room-title">No room selected</div>
+      <div class="no-room-sub">Pick a room from the sidebar, or create a new one to start chatting.</div>
+    </div>
+
+    <!-- shown when a room is open -->
+    <div id="active-room" class="hidden" style="display:flex; flex-direction:column; height:100%; overflow:hidden;">
+
+      <!-- header -->
+      <div class="chat-header">
+        <div class="chat-header-left">
+          <button class="icon-btn" id="mobile-menu-btn" style="display:none;" aria-label="Open sidebar">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/>
+            </svg>
+          </button>
+          <div>
+            <div class="chat-room-name" id="active-room-name">—</div>
+            <div class="chat-room-meta" id="active-room-meta">—</div>
+          </div>
+        </div>
+        <div class="chat-header-right">
+          <button class="icon-btn" id="members-btn" title="View members" aria-label="View members">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/>
+              <path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/>
+            </svg>
+          </button>
+          <button class="icon-btn" id="leave-room-btn" title="Leave room" aria-label="Leave room">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/>
+              <polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- messages -->
+      <div class="messages-area" id="messages-area">
+        <!-- populated by messages.js -->
+      </div>
+
+      <!-- typing indicator -->
+      <div class="typing-bar" id="typing-bar"></div>
+
+      <!-- input -->
+      <div class="input-area">
+        <div class="input-box">
+
+          <div class="reply-banner" id="reply-banner">
+            <div class="reply-banner-text" id="reply-banner-text"></div>
+            <button class="reply-cancel" id="reply-cancel-btn" aria-label="Cancel reply">✕</button>
+          </div>
+
+          <textarea
+            class="msg-input"
+            id="msg-input"
+            rows="1"
+            placeholder="Message…"
+            maxlength="2000"
+          ></textarea>
+
+          <div class="input-footer">
+            <div class="input-actions" style="position:relative;">
+              <button class="input-action" id="emoji-trigger-btn" title="Add emoji" aria-label="Add emoji">😊</button>
+
+              <!-- emoji picker for composing messages -->
+              <div class="emoji-picker" id="compose-emoji-picker">
+                <!-- filled by messages.js -->
+              </div>
+            </div>
+
+            <button class="send-btn" id="send-btn" disabled aria-label="Send message">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M2 21l21-9L2 3v7l15 2-15 2z"/>
+              </svg>
+            </button>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+
+</div>
+
+<!-- ════════════════════════════════════ -->
+<!-- CREATE ROOM MODAL -->
+<!-- ════════════════════════════════════ -->
+<div class="modal-overlay" id="create-room-modal">
+  <div class="modal">
+    <div class="modal-title">Create a room</div>
+    <div class="modal-sub">Start a new space for conversation.</div>
+
+    <div class="error-banner" id="create-room-banner"></div>
+
+    <div class="field" style="margin-bottom:12px;">
+      <label for="new-room-name">Room name</label>
+      <input class="input" type="text" id="new-room-name" placeholder="e.g. Design Team"/>
+      <span class="field-msg" id="new-room-name-msg"></span>
+    </div>
+
+    <div class="field" style="margin-bottom:12px;">
+      <label for="new-room-desc">Description <span class="optional">(optional)</span></label>
+      <input class="input" type="text" id="new-room-desc" placeholder="What's this room about?"/>
+    </div>
+
+    <div class="field">
+      <label for="new-room-type">Room type</label>
+      <select class="input" id="new-room-type">
+        <option value="public">Public — anyone can join</option>
+        <option value="group">Group — invite only</option>
+      </select>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-ghost" id="cancel-create-room">Cancel</button>
+      <button class="btn btn-primary" id="confirm-create-room">
+        <div class="btn-spinner"></div>
+        <span class="btn-label">Create room</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════ -->
+<!-- MEMBERS MODAL -->
+<!-- ════════════════════════════════════ -->
+<div class="modal-overlay" id="members-modal">
+  <div class="modal">
+    <div class="modal-title">Members</div>
+    <div class="modal-sub" id="members-modal-sub">—</div>
+
+    <div id="members-list" style="display:flex; flex-direction:column; gap:8px; max-height:320px; overflow-y:auto;">
+      <!-- filled by rooms.js -->
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-ghost" id="close-members-modal" style="flex:1;">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- toast notifications -->
+<div class="toast-container" id="toast-container"></div>
+
+<!-- ════════════════════════════════════ -->
+<!-- SCRIPTS — order matters -->
+<!-- ════════════════════════════════════ -->
+<script src="js/config.js"></script>
+<script src="js/api.js"></script>
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+<script src="js/socket.js"></script>
+<script src="js/rooms.js"></script>
+<script src="js/messages.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
