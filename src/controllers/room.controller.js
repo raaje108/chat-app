@@ -94,88 +94,29 @@ const createRoom = async (req, res, next) => {
 // GET ALL PUBLIC ROOMS
 // GET /api/rooms
 // ─────────────────────────────────────────────
-const getRooms = async (req, res, next) => {
-    try {
+const query = `
+    SELECT 
+        r.id, r.name, r.description, r.room_type, r.icon_url,
+        r.created_by, r.created_at,
+        COUNT(rm.id) AS member_count,
+        MAX(CASE WHEN rm.user_id = ? THEN 1 ELSE 0 END) AS is_joined,
 
-        // ── STEP 1 — handle optional search query ──
-        // The frontend can send ?search=general to filter rooms
-        // req.query contains everything after the ? in the URL
-        // Example: GET /api/rooms?search=general
-        //          req.query = { search: 'general' }
-        const { search } = req.query;
+        -- NEW: check if current user has a pending request
+        (SELECT status FROM room_join_requests 
+         WHERE room_id = r.id AND user_id = ? AND status = 'pending') AS request_status
 
-        // ── STEP 2 — build the query ──
-        // We use a JOIN to get member counts alongside room data
-        // We also check if the current user has already joined each room
-        const query = `
-            SELECT 
-                r.id,
-                r.name,
-                r.description,
-                r.room_type,
-                r.icon_url,
-                r.created_by,
-                r.created_at,
+    FROM rooms r
+    LEFT JOIN room_members rm ON r.id = rm.room_id
+    WHERE r.deleted_at IS NULL
+    ${search ? 'AND r.name LIKE ?' : ''}
+    GROUP BY r.id
+    ORDER BY r.created_at DESC
+`;
 
-                -- COUNT how many members are in each room
-                -- COUNT(*) would include NULL rows from LEFT JOIN
-                -- COUNT(rm.id) only counts actual matches
-                COUNT(rm.id) AS member_count,
-
-                -- Check if the logged in user already joined this room
-                -- MAX() is a trick here — it returns 1 if any row matches, NULL if none
-                -- We then convert to a boolean with a CASE statement
-                MAX(CASE WHEN rm.user_id = ? THEN 1 ELSE 0 END) AS is_joined
-
-            FROM rooms r
-
-            -- LEFT JOIN means: include rooms even if they have 0 members
-            LEFT JOIN room_members rm ON r.id = rm.room_id
-
-            -- Only show public rooms
-            -- AND only rooms not soft-deleted
-            WHERE r.room_type = 'public'
-              AND r.deleted_at IS NULL
-
-            -- If search param was sent, filter by name
-            -- LIKE '%general%' matches any name containing "general"
-            -- The ? will be replaced with the search value
-            ${search ? 'AND r.name LIKE ?' : ''}
-
-            -- Group by room so COUNT works correctly
-            -- Without GROUP BY, COUNT would count ALL rows as one
-            GROUP BY r.id
-
-            -- Newest rooms first
-            ORDER BY r.created_at DESC
-        `;
-
-        // ── STEP 3 — build the values array ──
-        // First ? is for the is_joined check (req.user.id)
-        // Second ? is for the search filter (only if search exists)
-        const values = search
-            ? [req.user.id, `%${search}%`]
-            : [req.user.id];
-        // The % signs are SQL wildcards — like * in regular search
-        // '%general%' → matches "General Chat", "general talk", "mygeneral"
-        // 'general%'  → only matches things STARTING with "general"
-        // '%general'  → only matches things ENDING with "general"
-
-        // ── STEP 4 — run the query ──
-        const [rooms] = await db.query(query, values);
-
-        // ── STEP 5 — send response ──
-        res.status(200).json({
-            message: 'Rooms fetched successfully',
-            count: rooms.length,  // how many rooms total
-            rooms
-        });
-
-    } catch (error) {
-        next(error);
-    }
-};
-
+// update values — req.user.id now appears twice
+const values = search
+    ? [req.user.id, req.user.id, `%${search}%`]
+    : [req.user.id, req.user.id];
 // ─────────────────────────────────────────────
 // JOIN A ROOM
 // POST /api/rooms/:roomId/join
@@ -426,5 +367,228 @@ const deleteRoom = async (req, res, next) => {
         next(error);
     }
 };
+// ─────────────────────────────────────────────
+// REQUEST TO JOIN A GROUP ROOM
+// POST /api/rooms/:roomId/join-request
+// ─────────────────────────────────────────────
+const requestToJoin = async (req, res, next) => {
+    try {
+        const roomId = Number(req.params.roomId);
+        const userId = req.user.id;
 
-module.exports = { createRoom , getRooms, joinRoom, getRoomMembers, deleteRoom};
+        // ── verify room exists ──
+        const [rooms] = await db.query(
+            `SELECT id, name, room_type FROM rooms 
+             WHERE id = ? AND deleted_at IS NULL`,
+            [roomId]
+        );
+
+        if (rooms.length === 0) {
+            return next(new AppError('Room not found', 404));
+        }
+
+        const room = rooms[0];
+
+        // ── only 'group' rooms need requests ──
+        // public rooms should use the regular joinRoom endpoint
+        if (room.room_type !== 'group') {
+            return next(new AppError('This room does not require a join request', 400));
+        }
+
+        // ── check not already a member ──
+        const [existing] = await db.query(
+            `SELECT id FROM room_members 
+             WHERE room_id = ? AND user_id = ? AND left_at IS NULL`,
+            [roomId, userId]
+        );
+
+        if (existing.length > 0) {
+            return next(new AppError('You are already a member of this room', 409));
+        }
+
+        // ── insert the request ──
+        // UNIQUE KEY (room_id, user_id) blocks duplicate pending requests
+        await db.query(
+            `INSERT INTO room_join_requests (room_id, user_id)
+             VALUES (?, ?)`,
+            [roomId, userId]
+        );
+
+        res.status(201).json({
+            message: `Join request sent for "${room.name}"`,
+            roomId
+        });
+
+    } catch (error) {
+        if (error.code === 'ER_DUP_ENTRY') {
+            return next(new AppError('You already have a pending request for this room', 409));
+        }
+        next(error);
+    }
+};
+
+// ─────────────────────────────────────────────
+// GET PENDING JOIN REQUESTS (admin only)
+// GET /api/rooms/:roomId/join-requests
+// ─────────────────────────────────────────────
+const getJoinRequests = async (req, res, next) => {
+    try {
+        const roomId = Number(req.params.roomId);
+
+        // ── verify requester is an admin of this room ──
+        const [membership] = await db.query(
+            `SELECT role FROM room_members 
+             WHERE room_id = ? AND user_id = ? AND left_at IS NULL`,
+            [roomId, req.user.id]
+        );
+
+        if (membership.length === 0 || membership[0].role !== 'admin') {
+            return next(new AppError('Only room admins can view join requests', 403));
+        }
+
+        // ── fetch pending requests with requester info ──
+        const [requests] = await db.query(
+            `SELECT 
+                jr.id,
+                jr.requested_at,
+                u.id         AS user_id,
+                u.full_name,
+                u.username,
+                u.avatar_url
+             FROM room_join_requests jr
+             JOIN users u ON jr.user_id = u.id
+             WHERE jr.room_id = ? AND jr.status = 'pending'
+             ORDER BY jr.requested_at ASC`,
+            [roomId]
+        );
+
+        res.status(200).json({
+            message: 'Join requests fetched',
+            count:   requests.length,
+            requests
+        });
+
+    } catch (error) {
+        next(error);
+    }
+};
+
+// ─────────────────────────────────────────────
+// APPROVE A JOIN REQUEST (admin only)
+// POST /api/rooms/:roomId/join-requests/:requestId/approve
+// ─────────────────────────────────────────────
+const approveJoinRequest = async (req, res, next) => {
+    try {
+        const roomId    = Number(req.params.roomId);
+        const requestId = Number(req.params.requestId);
+
+        // ── verify admin ──
+        const [membership] = await db.query(
+            `SELECT role FROM room_members 
+             WHERE room_id = ? AND user_id = ? AND left_at IS NULL`,
+            [roomId, req.user.id]
+        );
+
+        if (membership.length === 0 || membership[0].role !== 'admin') {
+            return next(new AppError('Only room admins can approve requests', 403));
+        }
+
+        // ── fetch the request ──
+        const [requests] = await db.query(
+            `SELECT id, user_id, status FROM room_join_requests 
+             WHERE id = ? AND room_id = ?`,
+            [requestId, roomId]
+        );
+
+        if (requests.length === 0) {
+            return next(new AppError('Join request not found', 404));
+        }
+
+        if (requests[0].status !== 'pending') {
+            return next(new AppError('This request has already been resolved', 409));
+        }
+
+        const requesterId = requests[0].user_id;
+
+        // ── two things happen together: ──
+        // 1. mark request as approved
+        // 2. actually add them to room_members
+        // both must succeed or neither should — but we'll keep it simple for now
+        await db.query(
+            `UPDATE room_join_requests 
+             SET status = 'approved', resolved_at = NOW(), resolved_by = ?
+             WHERE id = ?`,
+            [req.user.id, requestId]
+        );
+
+        await db.query(
+            `INSERT INTO room_members (room_id, user_id, role)
+             VALUES (?, ?, 'member')`,
+            [roomId, requesterId]
+        );
+
+        res.status(200).json({
+            message: 'Join request approved',
+            requestId,
+            userId: requesterId
+        });
+
+    } catch (error) {
+        next(error);
+    }
+};
+
+// ─────────────────────────────────────────────
+// REJECT A JOIN REQUEST (admin only)
+// POST /api/rooms/:roomId/join-requests/:requestId/reject
+// ─────────────────────────────────────────────
+const rejectJoinRequest = async (req, res, next) => {
+    try {
+        const roomId    = Number(req.params.roomId);
+        const requestId = Number(req.params.requestId);
+
+        const [membership] = await db.query(
+            `SELECT role FROM room_members 
+             WHERE room_id = ? AND user_id = ? AND left_at IS NULL`,
+            [roomId, req.user.id]
+        );
+
+        if (membership.length === 0 || membership[0].role !== 'admin') {
+            return next(new AppError('Only room admins can reject requests', 403));
+        }
+
+        const [requests] = await db.query(
+            `SELECT id, status FROM room_join_requests 
+             WHERE id = ? AND room_id = ?`,
+            [requestId, roomId]
+        );
+
+        if (requests.length === 0) {
+            return next(new AppError('Join request not found', 404));
+        }
+
+        if (requests[0].status !== 'pending') {
+            return next(new AppError('This request has already been resolved', 409));
+        }
+
+        await db.query(
+            `UPDATE room_join_requests 
+             SET status = 'rejected', resolved_at = NOW(), resolved_by = ?
+             WHERE id = ?`,
+            [req.user.id, requestId]
+        );
+
+        res.status(200).json({
+            message: 'Join request rejected',
+            requestId
+        });
+
+    } catch (error) {
+        next(error);
+    }
+};
+
+module.exports = {
+    createRoom, getRooms, joinRoom, getRoomMembers, deleteRoom,
+    requestToJoin, getJoinRequests, approveJoinRequest, rejectJoinRequest  // ← ADD
+};

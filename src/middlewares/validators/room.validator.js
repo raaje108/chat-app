@@ -33,5 +33,13 @@ const roomIdValidator = [
         // .isInt() checks it's a valid integer
         // { min: 1 } means no zero or negative numbers
 ];
+const requestIdValidator = [
+    param('roomId').isInt({ min: 1 }).withMessage('Room ID must be a positive integer'),
+];
 
-module.exports = { createRoomValidator, roomIdValidator };
+const joinRequestActionValidator = [
+    param('roomId').isInt({ min: 1 }).withMessage('Room ID must be a positive integer'),
+    param('requestId').isInt({ min: 1 }).withMessage('Request ID must be a positive integer'),
+];
+
+module.exports = { createRoomValidator, roomIdValidator, requestIdValidator, joinRequestActionValidator };
