@@ -90,33 +90,45 @@ const createRoom = async (req, res, next) => {
 
 
 
-// ─────────────────────────────────────────────
-// GET ALL PUBLIC ROOMS
-// GET /api/rooms
-// ─────────────────────────────────────────────
-const query = `
-    SELECT 
-        r.id, r.name, r.description, r.room_type, r.icon_url,
-        r.created_by, r.created_at,
-        COUNT(rm.id) AS member_count,
-        MAX(CASE WHEN rm.user_id = ? THEN 1 ELSE 0 END) AS is_joined,
+const getRooms = async (req, res, next) => {
+    try {
+        const { search } = req.query;
 
-        -- NEW: check if current user has a pending request
-        (SELECT status FROM room_join_requests 
-         WHERE room_id = r.id AND user_id = ? AND status = 'pending') AS request_status
+        const query = `
+            SELECT 
+                r.id, r.name, r.description, r.room_type, r.icon_url,
+                r.created_by, r.created_at,
+                COUNT(rm.id) AS member_count,
+                MAX(CASE WHEN rm.user_id = ? THEN 1 ELSE 0 END) AS is_joined,
 
-    FROM rooms r
-    LEFT JOIN room_members rm ON r.id = rm.room_id
-    WHERE r.deleted_at IS NULL
-    ${search ? 'AND r.name LIKE ?' : ''}
-    GROUP BY r.id
-    ORDER BY r.created_at DESC
-`;
+                -- NEW: check if current user has a pending request
+                (SELECT status FROM room_join_requests 
+                 WHERE room_id = r.id AND user_id = ? AND status = 'pending') AS request_status
 
-// update values — req.user.id now appears twice
-const values = search
-    ? [req.user.id, req.user.id, `%${search}%`]
-    : [req.user.id, req.user.id];
+            FROM rooms r
+            LEFT JOIN room_members rm ON r.id = rm.room_id
+            WHERE r.deleted_at IS NULL
+            ${search ? 'AND r.name LIKE ?' : ''}
+            GROUP BY r.id
+            ORDER BY r.created_at DESC
+        `;
+
+        // update values — req.user.id now appears twice
+        const values = search
+            ? [req.user.id, req.user.id, `%${search}%`]
+            : [req.user.id, req.user.id];
+
+        const [rooms] = await db.query(query, values);
+
+        res.status(200).json({
+            message: 'Rooms fetched successfully',
+            count: rooms.length,
+            rooms
+        });
+    } catch (error) {
+        next(error);
+    }
+};
 // ─────────────────────────────────────────────
 // JOIN A ROOM
 // POST /api/rooms/:roomId/join

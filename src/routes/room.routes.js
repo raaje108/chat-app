@@ -1,11 +1,32 @@
 const express                                         = require('express');
 const router                                          = express.Router();
-const { createRoom, getRooms,
-        joinRoom, getRoomMembers, deleteRoom }         = require('../controllers/room.controller');
 const { verifyJWT }                                   = require('../middlewares/auth.middleware');
 const { validateRequest }                             = require('../middlewares/validate.middleware');
 const { createRoomValidator,
-        roomIdValidator }                             = require('../middlewares/validators/room.validator');
+        roomIdValidator,
+        joinRequestActionValidator }                  = require('../middlewares/validators/room.validator');
+const {
+    createRoom, getRooms, joinRoom, getRoomMembers, deleteRoom,
+    requestToJoin, getJoinRequests, approveJoinRequest, rejectJoinRequest
+} = require('../controllers/room.controller');
+
+// ... existing routes ...
+
+router.post('/:roomId/join-request',
+    verifyJWT, roomIdValidator, validateRequest, requestToJoin
+);
+
+router.get('/:roomId/join-requests',
+    verifyJWT, roomIdValidator, validateRequest, getJoinRequests
+);
+
+router.post('/:roomId/join-requests/:requestId/approve',
+    verifyJWT, joinRequestActionValidator, validateRequest, approveJoinRequest
+);
+
+router.post('/:roomId/join-requests/:requestId/reject',
+    verifyJWT, joinRequestActionValidator, validateRequest, rejectJoinRequest
+);
 
 router.post('/',
     verifyJWT,
