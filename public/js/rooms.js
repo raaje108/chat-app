@@ -388,7 +388,7 @@ const Rooms = {
       badge.classList.add('hidden');
     }
   },
-
+//thanks
   async openJoinRequestsModal(roomId) {
     if (!roomId) return;
     const modal = document.getElementById('requests-modal');
