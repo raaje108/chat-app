@@ -77,6 +77,22 @@ const Api = {
     remove: (roomId) => apiRequest(`/rooms/${roomId}`, {
       method: 'DELETE',
     }),
+
+    requestToJoin: (roomId) => apiRequest(`/rooms/${roomId}/join-request`, {
+      method: 'POST',
+    }),
+
+    getJoinRequests: (roomId) => apiRequest(`/rooms/${roomId}/join-requests`),
+
+    approveJoinRequest: (roomId, requestId) =>
+      apiRequest(`/rooms/${roomId}/join-requests/${requestId}/approve`, {
+        method: 'POST',
+      }),
+
+    rejectJoinRequest: (roomId, requestId) =>
+      apiRequest(`/rooms/${roomId}/join-requests/${requestId}/reject`, {
+        method: 'POST',
+      }),
   },
 
   // ── MESSAGES ──

@@ -116,6 +116,17 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('members-modal')?.classList.remove('show');
   });
 
+  // Join requests modal triggers
+  document.getElementById('join-requests-btn')?.addEventListener('click', () => {
+    if (State.activeRoomId) {
+      Rooms.openJoinRequestsModal(State.activeRoomId);
+    }
+  });
+
+  document.getElementById('close-requests-modal')?.addEventListener('click', () => {
+    document.getElementById('requests-modal')?.classList.remove('show');
+  });
+
   // Leave room trigger
   document.getElementById('leave-room-btn')?.addEventListener('click', () => {
     Rooms.leaveActiveRoom();

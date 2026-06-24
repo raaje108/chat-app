@@ -99,6 +99,19 @@
       <div class="no-room-sub">Pick a room from the sidebar, or create a new one to start chatting.</div>
     </div>
 
+    <!-- shown when a group room requires join request -->
+    <div class="no-room hidden" id="group-locked-state" style="display:none; flex-direction:column; height:100%; justify-content:center; align-items:center;">
+      <div class="no-room-icon">🔒</div>
+      <div class="no-room-title" id="locked-room-name">Private Group</div>
+      <div class="no-room-sub" id="locked-room-desc">This is an invite-only group. You must submit a request to join.</div>
+      <div id="locked-room-action-area" style="margin-top: 20px;">
+        <button class="btn btn-primary" id="request-join-btn">
+          <div class="btn-spinner"></div>
+          <span class="btn-label">Request to Join Group</span>
+        </button>
+      </div>
+    </div>
+
     <!-- shown when a room is open -->
     <div id="active-room" class="hidden" style="display:flex; flex-direction:column; height:100%; overflow:hidden;">
 
@@ -116,6 +129,13 @@
           </div>
         </div>
         <div class="chat-header-right">
+          <button class="icon-btn hidden" id="join-requests-btn" title="Join requests" aria-label="Join requests" style="position:relative;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+              <polyline points="22,6 12,13 2,6"/>
+            </svg>
+            <span class="unread-badge hidden" id="join-requests-badge" style="position:absolute; top:-5px; right:-5px; padding: 2px 5px; min-width: auto; font-size: 8px;"></span>
+          </button>
           <button class="icon-btn" id="members-btn" title="View members" aria-label="View members">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/>
@@ -235,6 +255,24 @@
 
     <div class="modal-footer">
       <button class="btn btn-ghost" id="close-members-modal" style="flex:1;">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════ -->
+<!-- JOIN REQUESTS MODAL -->
+<!-- ════════════════════════════════════ -->
+<div class="modal-overlay" id="requests-modal">
+  <div class="modal">
+    <div class="modal-title">Join Requests</div>
+    <div class="modal-sub" id="requests-modal-sub">—</div>
+
+    <div id="requests-list" style="display:flex; flex-direction:column; gap:8px; max-height:320px; overflow-y:auto;">
+      <!-- filled by rooms.js -->
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-ghost" id="close-requests-modal" style="flex:1;">Close</button>
     </div>
   </div>
 </div>

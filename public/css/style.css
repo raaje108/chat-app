@@ -482,6 +482,42 @@ a {
 .btn.loading .btn-spinner { display: block; }
 .btn.loading .btn-label   { opacity: 0.7; }
 
+.btn-sm {
+  padding: var(--space-1) var(--space-3);
+  font-size: 11px;
+  height: 28px;
+}
+
+.btn-success {
+  background: var(--green);
+  color: #000;
+}
+
+.btn-success:hover:not(:disabled) {
+  background: var(--green-hover);
+}
+
+.btn-danger {
+  background: var(--red);
+  color: var(--text-1);
+}
+
+.btn-danger:hover:not(:disabled) {
+  background: #dc2626;
+}
+
+.room-item .room-lock {
+  color: var(--text-2);
+  font-size: 13px;
+  flex-shrink: 0;
+  font-weight: 400;
+}
+
+.room-item.active .room-lock {
+  color: var(--green);
+  opacity: 0.6;
+}
+
 /* ── 12. SWITCH TEXT ── */
 .switch-text {
   text-align: center;
@@ -746,6 +782,39 @@ a {
 .room-item.active .room-hash {
   color: var(--green);
   opacity: 0.6;
+}
+
+/* locked group rooms — not yet joined, awaiting admin approval */
+.room-item.locked .room-name {
+  color: var(--text-2);
+}
+
+.room-item.locked:hover {
+  background: var(--bg-3);
+}
+
+.room-item.locked .room-meta {
+  color: var(--text-3);
+}
+
+/* sidebar section labels — "Your Rooms" / "Discover" */
+.rooms-section-label {
+  padding: var(--space-3) var(--space-3) var(--space-1);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-3);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+
+.rooms-section-label:first-child {
+  padding-top: var(--space-2);
+}
+
+.rooms-empty-hint {
+  padding: var(--space-2) var(--space-3) var(--space-3);
+  font-size: 12px;
+  color: var(--text-3);
 }
 
 .room-info { flex: 1; min-width: 0; }
@@ -1388,5 +1457,5 @@ a {
     transition: left 0.25s ease;
   }
   .sidebar.open { left: 0; }
-  #mobile-menu-btn { display: block !important; }
 }
+</style>
