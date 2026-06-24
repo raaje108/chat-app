@@ -389,6 +389,7 @@ const Rooms = {
     }
   },
 //thanks
+//a lot
   async openJoinRequestsModal(roomId) {
     if (!roomId) return;
     const modal = document.getElementById('requests-modal');
